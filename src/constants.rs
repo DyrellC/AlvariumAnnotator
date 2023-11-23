@@ -52,7 +52,7 @@ impl AnnotationType<'_> {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SdkAction<'a>(pub &'a str);
 
 pub const ACTION_CREATE: SdkAction = SdkAction("create");
