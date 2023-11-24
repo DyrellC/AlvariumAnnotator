@@ -55,6 +55,19 @@ impl AnnotationType<'_> {
     }
 }
 
+impl TryFrom<&str> for AnnotationType<'_> {
+    type Error = String;
+    fn try_from(kind: &str) -> Result<Self, Self::Error> {
+        match kind {
+            "source" => Ok(ANNOTATION_SOURCE),
+            "pki" => Ok(ANNOTATION_PKI),
+            "tls" => Ok(ANNOTATION_TLS),
+            "tpm" => Ok(ANNOTATION_TPM),
+            _ => Err("unkown annotation type".to_string())
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SdkAction<'a>(pub &'a str);
 
