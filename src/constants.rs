@@ -47,6 +47,9 @@ pub const ANNOTATION_TLS: AnnotationType = AnnotationType("tls");
 pub const ANNOTATION_TPM: AnnotationType = AnnotationType("tpm");
 
 impl AnnotationType<'_> {
+    pub fn kind(&self) -> &str {
+        self.0
+    }
     pub fn validate(&self) -> bool {
         self == &ANNOTATION_PKI || self == &ANNOTATION_SOURCE || self == &ANNOTATION_TLS || self == &ANNOTATION_TPM
     }
