@@ -1,4 +1,4 @@
-pub mod hash_providers {
+mod hash_providers {
 
     pub trait HashProvider {
         fn derive(&self, data: &[u8]) -> String;
@@ -10,7 +10,7 @@ pub mod hash_providers {
 
     #[cfg(test)]
     mod hash_provider_tests {
-        use crate::hash_providers::HashProvider;
+        use crate::HashProvider;
 
         struct MockHashProvider {}
 
@@ -29,7 +29,7 @@ pub mod hash_providers {
     }
 }
 
-pub mod signature_provider {
+mod signature_provider {
     use crate::Annotation;
 
     pub trait SignProvider {
@@ -49,7 +49,7 @@ pub mod signature_provider {
     #[cfg(test)]
     mod annotation_utility_tests {
         use crate::annotations::mock_annotation;
-        use crate::signature_provider::SignProvider;
+        use crate::SignProvider;
         use super::serialise_and_sign;
 
         struct MockSignProvider {}
@@ -92,7 +92,7 @@ pub mod signature_provider {
     }
 }
 
-pub mod stream_provider {
+mod stream_provider {
     use serde::{Serialize, Deserialize};
     use crate::constants::SdkAction;
     use crate::StreamConfigWrapper;
@@ -108,15 +108,17 @@ pub mod stream_provider {
     }
 
 
-    #[async_trait::async_trait(?Send)]
+    #[async_trait::async_trait]
     pub trait Publisher: Sized {
         type StreamConfig: StreamConfigWrapper;
         async fn new(cfg: &Self::StreamConfig) -> Result<Self, String>;
         async fn close(&mut self) -> Result<(), String>;
         async fn connect(&mut self) -> Result<(), String>;
-
         async fn reconnect(&mut self) -> Result<(), String>;
         async fn publish(&mut self, msg: MessageWrapper<'_>) -> Result<(), String>;
     }
 }
 
+pub use hash_providers::{HashProvider, derive_hash};
+pub use signature_provider::{SignProvider, serialise_and_sign};
+pub use stream_provider::{Publisher, MessageWrapper};
