@@ -1,4 +1,4 @@
-use crate::constants::{AnnotationType, HashType};
+use crate::constants::{self, AnnotationType, HashType};
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -43,4 +43,14 @@ impl<'a> Annotation<'a> {
     pub fn validate(&self) -> bool {
         self.hash.validate() && self.kind.validate()
     }
+}
+
+pub fn mock_annotation<'a>() -> Annotation<'a> {
+    let key = "The hash of the contents";
+    let hash = constants::SHA256_HASH;
+    let host = "Host Device";
+    let kind = constants::ANNOTATION_SOURCE;
+    let satisfied = true;
+
+    Annotation::new(key, hash, host, kind, satisfied)
 }

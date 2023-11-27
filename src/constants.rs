@@ -1,4 +1,5 @@
 use serde::{Serialize, Deserialize};
+use crate::error::AnnotatorError;
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct HashType<'a>(pub &'a str);
@@ -56,14 +57,14 @@ impl AnnotationType<'_> {
 }
 
 impl TryFrom<&str> for AnnotationType<'_> {
-    type Error = String;
+    type Error = AnnotatorError;
     fn try_from(kind: &str) -> Result<Self, Self::Error> {
         match kind {
             "source" => Ok(ANNOTATION_SOURCE),
             "pki" => Ok(ANNOTATION_PKI),
             "tls" => Ok(ANNOTATION_TLS),
             "tpm" => Ok(ANNOTATION_TPM),
-            _ => Err("unkown annotation type".to_string())
+            _ => Err(AnnotatorError::UnknownAnnotation)
         }
     }
 }
