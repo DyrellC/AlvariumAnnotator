@@ -33,17 +33,16 @@ mod signature_provider {
     use crate::Annotation;
 
     pub trait SignProvider {
-        fn sign(&self, key: &[u8], content: &[u8]) -> Result<String, Box<dyn std::error::Error>>;
-        fn verify(&self, key: &[u8], content: &[u8], signed: &[u8]) -> Result<bool, Box<dyn std::error::Error>>;
+        fn sign(&self, content: &[u8]) -> Result<String, Box<dyn std::error::Error>>;
+        fn verify(&self, content: &[u8], signed: &[u8]) -> Result<bool, Box<dyn std::error::Error>>;
     }
 
-    pub fn serialise_and_sign<P, K>(provider: &P, key: K, annotation: &Annotation) -> Result<String, Box<dyn std::error::Error>>
+    pub fn serialise_and_sign<P>(provider: &P, annotation: &Annotation) -> Result<String, Box<dyn std::error::Error>>
         where
             P: SignProvider,
-            K: AsRef<[u8]>,
     {
         let serialised = serde_json::to_vec(annotation)?;
-        provider.sign(key.as_ref(), &serialised)
+        provider.sign(&serialised)
     }
 
     #[cfg(test)]
@@ -52,18 +51,21 @@ mod signature_provider {
         use crate::SignProvider;
         use super::serialise_and_sign;
 
-        struct MockSignProvider {}
+        struct MockSignProvider {
+            pub public: String,
+            pub private: String,
+        }
 
         impl SignProvider for MockSignProvider {
-            fn sign(&self, key: &[u8], _content: &[u8]) -> Result<String, Box<dyn std::error::Error>> {
-                match key.eq("A known and correct key".as_bytes()) {
+            fn sign(&self, _content: &[u8]) -> Result<String, Box<dyn std::error::Error>> {
+                match self.private.as_str().eq("A known and correct key") {
                     true => Ok("Signed".to_string()),
                     false => Err(Box::new(crate::error::AnnotatorError::SignatureError))
                 }
             }
 
-            fn verify(&self, key: &[u8], _content: &[u8], _signed: &[u8]) -> Result<bool, Box<dyn std::error::Error>> {
-                match key.eq("A known and correct key".as_bytes()) {
+            fn verify(&self, _content: &[u8], _signed: &[u8]) -> Result<bool, Box<dyn std::error::Error>> {
+                match self.public.as_str().eq("A known and correct key") {
                     true => Ok(true),
                     false => Err(Box::new(crate::error::AnnotatorError::VerificationError))
                 }
@@ -73,20 +75,30 @@ mod signature_provider {
 
         #[test]
         fn mock_sign_provider() {
-            let mock_provider = MockSignProvider {};
-            let annotation = mock_annotation();
-            let correct_key = "A known and correct key".as_bytes();
-            let unknown_key = "An unknown key".as_bytes();
+            let correct_key = "A known and correct key".to_string();
+            let unknown_key = "An unknown key".to_string();
 
-            let failed_signature = serialise_and_sign(&mock_provider, unknown_key, &annotation);
+            let mock_provider = MockSignProvider {
+                private: correct_key.clone(),
+                public: correct_key.clone(),
+            };
+
+            let bad_mock_provider = MockSignProvider {
+                private: unknown_key.clone(),
+                public: unknown_key.clone(),
+            };
+
+            let annotation = mock_annotation();
+
+            let failed_signature = serialise_and_sign(&bad_mock_provider,  &annotation);
             assert!(failed_signature.is_err());
-            let signature = serialise_and_sign(&mock_provider, correct_key, &annotation);
+            let signature = serialise_and_sign(&mock_provider, &annotation);
             assert!(signature.is_ok());
 
             let ann_bytes = serde_json::to_vec(&annotation).unwrap();
-            let failed_verify = mock_provider.verify(unknown_key, &ann_bytes, &ann_bytes);
+            let failed_verify = bad_mock_provider.verify("Content".as_bytes(), &ann_bytes);
             assert!(failed_verify.is_err());
-            let verified = mock_provider.verify(correct_key, &ann_bytes, &ann_bytes);
+            let verified = mock_provider.verify( "Content".as_bytes(), &ann_bytes);
             assert!(verified.is_ok())
         }
     }
