@@ -111,12 +111,11 @@ mod stream_provider {
 
 
     #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-    pub struct MessageWrapper<'a>{
-        #[serde(borrow)]
-        pub action: SdkAction<'a>,
+    pub struct MessageWrapper{
+        pub action: SdkAction,
         #[serde(rename="messageType")]
-        pub message_type: &'a str,
-        pub content: &'a str,
+        pub message_type: String,
+        pub content: String,
     }
 
 
@@ -127,7 +126,7 @@ mod stream_provider {
         async fn close(&mut self) -> Result<(), String>;
         async fn connect(&mut self) -> Result<(), String>;
         async fn reconnect(&mut self) -> Result<(), String>;
-        async fn publish(&mut self, msg: MessageWrapper<'_>) -> Result<(), String>;
+        async fn publish(&mut self, msg: MessageWrapper) -> Result<(), String>;
     }
 }
 

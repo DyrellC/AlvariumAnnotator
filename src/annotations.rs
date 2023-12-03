@@ -2,13 +2,12 @@ use crate::constants::{self, AnnotationType, HashType};
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
-pub struct Annotation<'a> {
+pub struct Annotation {
     pub id: String,
     pub key: String,
-    #[serde(borrow)]
-    pub hash: HashType<'a>,
+    pub hash: HashType,
     pub host: String,
-    pub kind: AnnotationType<'a>,
+    pub kind: AnnotationType,
     pub signature: String,
     #[serde(rename = "isSatisfied")]
     pub is_satisfied: bool,
@@ -16,13 +15,12 @@ pub struct Annotation<'a> {
 }
 
 #[derive(Clone, PartialEq, Default, Serialize, Deserialize)]
-pub struct AnnotationList<'a> {
-    #[serde(borrow)]
-    pub items: Vec<Annotation<'a>>
+pub struct AnnotationList {
+    pub items: Vec<Annotation>
 }
 
-impl<'a> Annotation<'a> {
-    pub fn new(key: &str, hash: HashType<'a>, host: &str, kind: AnnotationType<'a>, is_satisfied: bool) -> Self {
+impl Annotation {
+    pub fn new(key: &str, hash: HashType, host: &str, kind: AnnotationType, is_satisfied: bool) -> Self {
         let timestamp = chrono::Local::now().to_string();
         Annotation {
             id: ulid::Ulid::new().to_string(),
@@ -40,16 +38,16 @@ impl<'a> Annotation<'a> {
         self.signature = signature.to_string()
     }
 
-    pub fn validate(&self) -> bool {
-        self.hash.validate() && self.kind.validate()
+    pub fn validate_base(&self) -> bool {
+        self.hash.is_base_hash_type() && self.kind.is_base_annotation_type()
     }
 }
 
-pub fn mock_annotation<'a>() -> Annotation<'a> {
+pub fn mock_annotation() -> Annotation {
     let key = "The hash of the contents";
-    let hash = constants::SHA256_HASH;
+    let hash = constants::SHA256_HASH.clone();
     let host = "Host Device";
-    let kind = constants::ANNOTATION_SOURCE;
+    let kind = constants::ANNOTATION_SOURCE.clone();
     let satisfied = true;
 
     Annotation::new(key, hash, host, kind, satisfied)
