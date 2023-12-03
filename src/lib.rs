@@ -3,7 +3,7 @@ mod annotations;
 mod providers;
 mod config {
     pub trait StreamConfigWrapper {
-        fn stream_type(&self) -> crate::constants::StreamType;
+        fn stream_type(&self) -> &crate::constants::StreamType;
     }
 }
 
