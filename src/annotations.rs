@@ -21,7 +21,7 @@ pub struct AnnotationList {
 
 impl Annotation {
     pub fn new(key: &str, hash: HashType, host: &str, kind: AnnotationType, is_satisfied: bool) -> Self {
-        let timestamp = chrono::Local::now().to_string();
+        let timestamp = chrono::Local::now().to_rfc3339();
         Annotation {
             id: ulid::Ulid::new().to_string(),
             key: key.to_string(),
