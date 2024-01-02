@@ -121,14 +121,12 @@ mod stream_provider {
     #[async_trait::async_trait]
     pub trait Publisher: Sized {
         type StreamConfig: StreamConfigWrapper;
-        async fn new(cfg: &Self::StreamConfig) -> Result<Self, Box<dyn std::error::Error>>;
-        async fn close(&mut self) -> Result<(), Box<dyn std::error::Error>>;
-        async fn connect(&mut self) -> Result<(), Box<dyn std::error::Error>>;
-        async fn reconnect(&mut self) -> Result<(), Box<dyn std::error::Error>>;
-        async fn publish(
-            &mut self,
-            msg: MessageWrapper<'_>,
-        ) -> Result<(), Box<dyn std::error::Error>>;
+        type Error: std::error::Error;
+        async fn new(cfg: &Self::StreamConfig) -> Result<Self, Self::Error>;
+        async fn close(&mut self) -> Result<(), Self::Error>;
+        async fn connect(&mut self) -> Result<(), Self::Error>;
+        async fn reconnect(&mut self) -> Result<(), Self::Error>;
+        async fn publish(&mut self, msg: MessageWrapper<'_>) -> Result<(), Self::Error>;
     }
 }
 

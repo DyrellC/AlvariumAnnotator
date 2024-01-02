@@ -11,7 +11,7 @@ mod config {
 pub use annotations::*;
 pub use annotator::Annotator;
 pub use config::StreamConfigWrapper;
-pub use providers::*;
 pub use errors::Error;
+pub use providers::*;
 
 pub mod constants;
