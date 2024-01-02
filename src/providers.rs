@@ -30,16 +30,17 @@ mod hash_providers {
 }
 
 mod signature_provider {
+    use crate::errors::Result;
     use crate::Annotation;
 
     pub trait SignProvider {
-        fn sign(&self, content: &[u8]) -> Result<String, Box<dyn std::error::Error>>;
-        fn verify(&self, content: &[u8], signed: &[u8]) -> Result<bool, Box<dyn std::error::Error>>;
+        fn sign(&self, content: &[u8]) -> Result<String>;
+        fn verify(&self, content: &[u8], signed: &[u8]) -> Result<bool>;
     }
 
-    pub fn serialise_and_sign<P>(provider: &P, annotation: &Annotation) -> Result<String, Box<dyn std::error::Error>>
-        where
-            P: SignProvider,
+    pub fn serialise_and_sign<P>(provider: &P, annotation: &Annotation) -> Result<String>
+    where
+        P: SignProvider,
     {
         let serialised = serde_json::to_vec(annotation)?;
         provider.sign(&serialised)
@@ -47,9 +48,10 @@ mod signature_provider {
 
     #[cfg(test)]
     mod annotation_utility_tests {
-        use crate::annotations::mock_annotation;
-        use crate::SignProvider;
         use super::serialise_and_sign;
+        use crate::annotations::mock_annotation;
+        use crate::errors::{Error, Result};
+        use crate::SignProvider;
 
         struct MockSignProvider {
             pub public: String,
@@ -57,21 +59,20 @@ mod signature_provider {
         }
 
         impl SignProvider for MockSignProvider {
-            fn sign(&self, _content: &[u8]) -> Result<String, Box<dyn std::error::Error>> {
+            fn sign(&self, _content: &[u8]) -> Result<String> {
                 match self.private.as_str().eq("A known and correct key") {
                     true => Ok("Signed".to_string()),
-                    false => Err(Box::new(crate::error::AnnotatorError::SignatureError))
+                    false => Err(Error::SignatureError),
                 }
             }
 
-            fn verify(&self, _content: &[u8], _signed: &[u8]) -> Result<bool, Box<dyn std::error::Error>> {
+            fn verify(&self, _content: &[u8], _signed: &[u8]) -> Result<bool> {
                 match self.public.as_str().eq("A known and correct key") {
                     true => Ok(true),
-                    false => Err(Box::new(crate::error::AnnotatorError::VerificationError))
+                    false => Err(Error::VerificationError),
                 }
             }
         }
-
 
         #[test]
         fn mock_sign_provider() {
@@ -90,7 +91,7 @@ mod signature_provider {
 
             let annotation = mock_annotation();
 
-            let failed_signature = serialise_and_sign(&bad_mock_provider,  &annotation);
+            let failed_signature = serialise_and_sign(&bad_mock_provider, &annotation);
             assert!(failed_signature.is_err());
             let signature = serialise_and_sign(&mock_provider, &annotation);
             assert!(signature.is_ok());
@@ -98,38 +99,39 @@ mod signature_provider {
             let ann_bytes = serde_json::to_vec(&annotation).unwrap();
             let failed_verify = bad_mock_provider.verify("Content".as_bytes(), &ann_bytes);
             assert!(failed_verify.is_err());
-            let verified = mock_provider.verify( "Content".as_bytes(), &ann_bytes);
+            let verified = mock_provider.verify("Content".as_bytes(), &ann_bytes);
             assert!(verified.is_ok())
         }
     }
 }
 
 mod stream_provider {
-    use serde::{Serialize, Deserialize};
     use crate::constants::SdkAction;
     use crate::StreamConfigWrapper;
-
+    use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-    pub struct MessageWrapper<'a>{
+    pub struct MessageWrapper<'a> {
         pub action: SdkAction,
-        #[serde(rename="messageType")]
+        #[serde(rename = "messageType")]
         pub message_type: &'a str,
         pub content: &'a str,
     }
 
-
     #[async_trait::async_trait]
     pub trait Publisher: Sized {
         type StreamConfig: StreamConfigWrapper;
-        async fn new(cfg: &Self::StreamConfig) -> Result<Self, String>;
-        async fn close(&mut self) -> Result<(), String>;
-        async fn connect(&mut self) -> Result<(), String>;
-        async fn reconnect(&mut self) -> Result<(), String>;
-        async fn publish(&mut self, msg: MessageWrapper<'_>) -> Result<(), String>;
+        async fn new(cfg: &Self::StreamConfig) -> Result<Self, Box<dyn std::error::Error>>;
+        async fn close(&mut self) -> Result<(), Box<dyn std::error::Error>>;
+        async fn connect(&mut self) -> Result<(), Box<dyn std::error::Error>>;
+        async fn reconnect(&mut self) -> Result<(), Box<dyn std::error::Error>>;
+        async fn publish(
+            &mut self,
+            msg: MessageWrapper<'_>,
+        ) -> Result<(), Box<dyn std::error::Error>>;
     }
 }
 
-pub use hash_providers::{HashProvider, derive_hash};
-pub use signature_provider::{SignProvider, serialise_and_sign};
-pub use stream_provider::{Publisher, MessageWrapper};
+pub use hash_providers::{derive_hash, HashProvider};
+pub use signature_provider::{serialise_and_sign, SignProvider};
+pub use stream_provider::{MessageWrapper, Publisher};

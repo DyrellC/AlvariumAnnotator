@@ -1,8 +1,7 @@
-use std::ops::Deref;
+use crate::errors::{Error, Result};
 use lazy_static::lazy_static;
-use serde::{Serialize, Deserialize};
-use crate::error::AnnotatorError;
-
+use serde::{Deserialize, Serialize};
+use std::ops::Deref;
 
 pub trait Validate {
     fn validate(&self) -> bool;
@@ -65,19 +64,22 @@ impl AnnotationType {
         &self.0
     }
     pub fn is_base_annotation_type(&self) -> bool {
-        self == ANNOTATION_PKI.deref() || self == ANNOTATION_SOURCE.deref() || self == ANNOTATION_TLS.deref() || self == ANNOTATION_TPM.deref()
+        self == ANNOTATION_PKI.deref()
+            || self == ANNOTATION_SOURCE.deref()
+            || self == ANNOTATION_TLS.deref()
+            || self == ANNOTATION_TPM.deref()
     }
 }
 
 impl TryFrom<&str> for AnnotationType {
-    type Error = AnnotatorError;
-    fn try_from(kind: &str) -> Result<Self, Self::Error> {
+    type Error = Error;
+    fn try_from(kind: &str) -> Result<Self> {
         match kind {
             "source" => Ok(ANNOTATION_SOURCE.clone()),
             "pki" => Ok(ANNOTATION_PKI.clone()),
             "tls" => Ok(ANNOTATION_TLS.clone()),
             "tpm" => Ok(ANNOTATION_TPM.clone()),
-            _ => Err(AnnotatorError::UnknownAnnotation)
+            _ => Err(Error::UnknownAnnotation),
         }
     }
 }
@@ -94,6 +96,9 @@ lazy_static! {
 
 impl SdkAction {
     pub fn is_base_action(&self) -> bool {
-        self == ACTION_CREATE.deref() || self == ACTION_MUTATE.deref() || self == ACTION_TRANSIT.deref() || self == ACTION_PUBLISH.deref()
+        self == ACTION_CREATE.deref()
+            || self == ACTION_MUTATE.deref()
+            || self == ACTION_TRANSIT.deref()
+            || self == ACTION_PUBLISH.deref()
     }
 }

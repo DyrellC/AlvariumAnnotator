@@ -1,5 +1,5 @@
 use crate::constants::{self, AnnotationType, HashType};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub struct Annotation {
@@ -16,11 +16,17 @@ pub struct Annotation {
 
 #[derive(Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct AnnotationList {
-    pub items: Vec<Annotation>
+    pub items: Vec<Annotation>,
 }
 
 impl Annotation {
-    pub fn new(key: &str, hash: HashType, host: &str, kind: AnnotationType, is_satisfied: bool) -> Self {
+    pub fn new(
+        key: &str,
+        hash: HashType,
+        host: &str,
+        kind: AnnotationType,
+        is_satisfied: bool,
+    ) -> Self {
         let timestamp = chrono::Local::now().to_rfc3339();
         Annotation {
             id: ulid::Ulid::new().to_string(),
