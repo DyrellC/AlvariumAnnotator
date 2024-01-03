@@ -30,17 +30,18 @@ mod hash_providers {
 }
 
 mod signature_provider {
-    use crate::errors::Result;
     use crate::Annotation;
 
     pub trait SignProvider {
-        fn sign(&self, content: &[u8]) -> Result<String>;
-        fn verify(&self, content: &[u8], signed: &[u8]) -> Result<bool>;
+        type Error: std::error::Error;
+        fn sign(&self, content: &[u8]) -> Result<String, Self::Error>;
+        fn verify(&self, content: &[u8], signed: &[u8]) -> Result<bool, Self::Error>;
     }
 
-    pub fn serialise_and_sign<P>(provider: &P, annotation: &Annotation) -> Result<String>
+    pub fn serialise_and_sign<P>(provider: &P, annotation: &Annotation) -> Result<String, P::Error>
     where
         P: SignProvider,
+        <P as SignProvider>::Error: From<serde_json::Error>
     {
         let serialised = serde_json::to_vec(annotation)?;
         provider.sign(&serialised)
@@ -59,6 +60,7 @@ mod signature_provider {
         }
 
         impl SignProvider for MockSignProvider {
+            type Error = crate::errors::Error;
             fn sign(&self, _content: &[u8]) -> Result<String> {
                 match self.private.as_str().eq("A known and correct key") {
                     true => Ok("Signed".to_string()),
